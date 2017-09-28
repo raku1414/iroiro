@@ -1,0 +1,10 @@
+[Unit]
+Description=Avahi Alias
+Requires=avahi-daemon.service
+After=avahi-daemon.service
+
+[Service]
+ExecStart=/root/avahi-alias.py mastodon.bobcent.local openresty.bobcent.local
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,186 @@
+policy_module(mastodon 1.1.2)
+
+require {
+  attribute file_type;
+  attribute httpdcontent;
+  attribute port_type;
+
+  class dir {read search write};
+  class netlink_route_socket {bind create getattr nlmsg_read read write};
+  class process execmem;
+  class tcp_socket {accept bind connect create getattr getopt name_connect name_bind node_bind setopt shutdown listen};
+  class udp_socket {connect create getattr};
+
+  type httpd_t;
+  type node_t;
+  type redis_t;
+  type redis_var_run_t;
+  type tmp_t;
+  type user_home_t;
+  type user_home_dir_t;
+}
+
+# mastodon_private_t is the type for the entire distribution of Mastodon
+# EXCEPT public directory.
+# e.g. semanage fcontext -a -t mastodon_private_t '/opt/mastodon(/(?!public).*)?'
+type mastodon_private_t;
+
+# mastodon_public_t is the type for public directory.
+# e.g. semanage fcontext -a -t mastodon_public_t '/opt/mastodon/public(/(?!system).*)?'
+type mastodon_public_t;
+
+# mastodon_public_system_t is the type for public/system.
+# e.g. semanage fcontext -a -t mastodo_public_system_t '/opt/mastodon/public/system(/.*)?'
+type mastodon_public_system_t;
+
+# mastodon_var_t is the type for a directory which contains variable files.
+# e.g. semanage fcontext -a -t mastodo_var_t '/var/opt/mastodon'
+#      BABEL_CACHE_PATH=/var/opt/mastodon/.babel.json exec npm run start
+type mastodon_var_t;
+
+# mastodon_var_run_t is the type for a directory which contains files generated
+# at runtime, including socket file.
+# e.g. semanage fcontext -a -t mastodo_var_run_t '/var/opt/mastodon/run'
+type mastodon_var_run_t;
+
+# mastodon_sidekiq_exec_t is the type for the entry point of sidekiq.
+type mastodon_sidekiq_exec_t;
+
+# mastodon_streaming_port_t is the type for the port for streaming to listen.
+type mastodon_streaming_port_t;
+
+# mastodon_streaming_exec_t is the type for the entry point of streaming.
+type mastodon_streaming_exec_t;
+
+# mastodon_web_port_t is the type for the port for the web server to listen.
+type mastodon_web_port_t;
+
+# mastodon_web_exec_t is the type for the entry point of the web server.
+type mastodon_web_exec_t;
+
+# Internal types
+type mastodon_sidekiq_t;
+type mastodon_streaming_t;
+type mastodon_streaming_tmp_t;
+type mastodon_web_t;
+type mastodon_web_tmp_t;
+
+typeattribute mastodon_public_t httpdcontent;
+typeattribute mastodon_public_system_t httpdcontent; 
+typeattribute mastodon_streaming_port_t port_type;
+typeattribute mastodon_web_port_t port_type;
+
+auth_use_nsswitch(mastodon_sidekiq_t)
+auth_use_nsswitch(mastodon_web_t)
+
+create_dirs_pattern(mastodon_sidekiq_t, mastodon_public_system_t, mastodon_public_system_t)
+create_dirs_pattern(mastodon_sidekiq_t, tmp_t, tmp_t)
+
+corecmd_exec_bin(mastodon_sidekiq_t)
+corecmd_exec_bin(mastodon_streaming_t)
+corecmd_exec_bin(mastodon_web_t)
+corecmd_exec_shell(mastodon_streaming_t)
+
+corenet_tcp_connect_redis_port(mastodon_sidekiq_t)
+corenet_tcp_connect_redis_port(mastodon_streaming_t)
+corenet_tcp_connect_redis_port(mastodon_web_t)
+corenet_tcp_connect_http_port(mastodon_sidekiq_t)
+corenet_tcp_connect_http_port(mastodon_web_t)
+corenet_tcp_recvfrom_labeled(mastodon_streaming_t, mastodon_streaming_port_t)
+corenet_tcp_recvfrom_labeled(mastodon_web_t, mastodon_web_port_t)
+corenet_tcp_sendrecv_http_port(mastodon_web_t)
+
+dev_read_sysfs(mastodon_sidekiq_t)
+dev_read_sysfs(mastodon_web_t)
+
+exec_files_pattern(mastodon_sidekiq_t, mastodon_private_t, mastodon_private_t)
+exec_files_pattern(mastodon_streaming_t, mastodon_private_t, mastodon_private_t)
+exec_files_pattern(mastodon_web_t, mastodon_private_t, mastodon_private_t)
+
+files_read_generic_tmp_files(mastodon_streaming_t)
+files_tmp_file(mastodon_streaming_tmp_t)
+files_tmp_file(mastodon_public_system_t)
+files_tmp_file(mastodon_web_tmp_t)
+files_tmp_filetrans(mastodon_sidekiq_t, mastodon_public_system_t, file)
+files_tmp_filetrans(mastodon_streaming_t, mastodon_streaming_tmp_t, file)
+files_tmp_filetrans(mastodon_web_t, mastodon_web_tmp_t, file)
+files_type(mastodon_private_t)
+files_type(mastodon_public_t)
+files_type(mastodon_public_system_t)
+files_type(mastodon_var_t)
+files_type(mastodon_var_run_t)
+
+init_daemon_domain(mastodon_web_t, mastodon_web_exec_t)
+init_daemon_domain(mastodon_sidekiq_t, mastodon_sidekiq_exec_t)
+init_daemon_domain(mastodon_streaming_t, mastodon_streaming_exec_t)
+
+kernel_search_network_sysctl(mastodon_sidekiq_t)
+kernel_read_system_state(mastodon_sidekiq_t)
+kernel_read_system_state(mastodon_streaming_t)
+kernel_read_system_state(mastodon_web_t)
+
+libs_exec_lib_files(mastodon_streaming_t)
+
+manage_dirs_pattern(mastodon_sidekiq_t, mastodon_public_system_t, mastodon_public_system_t)
+manage_files_pattern(mastodon_sidekiq_t, mastodon_public_system_t, mastodon_public_system_t)
+manage_files_pattern(mastodon_streaming_t, mastodon_streaming_tmp_t, mastodon_streaming_tmp_t)
+manage_files_pattern(mastodon_streaming_t, mastodon_var_t, mastodon_var_t)
+manage_files_pattern(mastodon_web_t, mastodon_public_system_t, mastodon_public_system_t)
+manage_files_pattern(mastodon_web_t, mastodon_web_tmp_t, mastodon_web_tmp_t)
+manage_sock_files_pattern(mastodon_streaming_t, mastodon_var_run_t, mastodon_var_run_t)
+manage_sock_files_pattern(mastodon_web_t, mastodon_var_run_t, mastodon_var_run_t)
+
+miscfiles_read_generic_certs(mastodon_sidekiq_t)
+miscfiles_read_generic_certs(mastodon_web_t)
+
+postgresql_stream_connect(mastodon_sidekiq_t)
+postgresql_stream_connect(mastodon_streaming_t)
+postgresql_stream_connect(mastodon_web_t)
+postgresql_tcp_connect(mastodon_sidekiq_t)
+postgresql_tcp_connect(mastodon_streaming_t)
+postgresql_tcp_connect(mastodon_web_t)
+
+read_files_pattern(mastodon_sidekiq_t, mastodon_private_t, mastodon_private_t)
+read_files_pattern(mastodon_sidekiq_t, mastodon_public_t, mastodon_public_t)
+read_files_pattern(mastodon_streaming_t, mastodon_private_t, mastodon_private_t)
+read_files_pattern(mastodon_web_t, mastodon_private_t, mastodon_private_t)
+read_files_pattern(mastodon_web_t, mastodon_public_t, mastodon_public_t)
+
+read_lnk_files_pattern(mastodon_streaming_t, mastodon_private_t, mastodon_private_t)
+
+sendmail_domtrans(mastodon_sidekiq_t)
+
+stream_connect_pattern(httpd_t, mastodon_var_run_t, mastodon_var_run_t, mastodon_streaming_t)
+stream_connect_pattern(httpd_t, mastodon_var_run_t, mastodon_var_run_t, mastodon_web_t)
+stream_connect_pattern(mastodon_sidekiq_t, redis_var_run_t, redis_var_run_t, redis_t)
+stream_connect_pattern(mastodon_streaming_t, redis_var_run_t, redis_var_run_t, redis_t)
+stream_connect_pattern(mastodon_web_t, redis_var_run_t, redis_var_run_t, redis_t)
+
+sysnet_read_config(mastodon_sidekiq_t)
+sysnet_read_config(mastodon_streaming_t)
+sysnet_read_config(mastodon_web_t)
+
+userdom_dontaudit_search_user_home_dirs(mastodon_streaming_t)
+userdom_dontaudit_search_user_home_dirs(mastodon_streaming_t)
+userdom_search_user_home_dirs(mastodon_sidekiq_t)
+userdom_search_user_home_dirs(mastodon_web_t)
+
+allow mastodon_sidekiq_t mastodon_private_t: dir read;
+allow mastodon_sidekiq_t mastodon_public_t: dir read;
+allow mastodon_sidekiq_t mastodon_sidekiq_t: netlink_route_socket {bind create getattr nlmsg_read};
+allow mastodon_sidekiq_t mastodon_sidekiq_t: process execmem;
+allow mastodon_sidekiq_t mastodon_sidekiq_t: tcp_socket {connect create getattr name_connect};
+allow mastodon_sidekiq_t mastodon_sidekiq_t: udp_socket {connect create getattr};
+allow mastodon_sidekiq_t user_home_t: dir search;
+allow mastodon_sidekiq_t user_home_dir_t: dir write;
+allow mastodon_streaming_t mastodon_streaming_t: netlink_route_socket {bind create getattr nlmsg_read read write};
+allow mastodon_streaming_t mastodon_streaming_t: process execmem;
+allow mastodon_streaming_t mastodon_streaming_t: tcp_socket {accept bind connect create getattr getopt listen read setopt shutdown write};
+allow mastodon_streaming_t mastodon_streaming_t: udp_socket {connect create getattr};
+allow mastodon_streaming_t mastodon_streaming_port_t: tcp_socket name_bind;
+allow mastodon_streaming_t node_t: tcp_socket node_bind;
+allow mastodon_streaming_t mastodon_private_t: dir read;
+allow mastodon_web_t mastodon_private_t: dir read;
+allow mastodon_web_t mastodon_public_t: dir read;
+allow mastodon_web_t mastodon_var_t: dir search;
+allow mastodon_web_t mastodon_web_t: process execmem;
