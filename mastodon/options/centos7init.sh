@@ -1,10 +1,10 @@
 #!/bin/bash
 
-hostname="mumps.pw"
-myusr="bobcent"
-pw="kurowasan8916"
+hostname="fefe.com"
+myusr="hogeeee"
+pw="fafa"
 #for ssh
-myport="60109"
+myport="52454"
 pubkey=$(cat hoge.pub)
 
 #disable selinux
@@ -67,7 +67,7 @@ sed -i -e "s/#Port 22/Port ${myport}/g" -e "s/#PermitRootLogin yes/PermitRootLog
 -e "s/PasswordAuthentication yes/PasswordAuthentication no/g" /etc/ssh/sshd_config
 systemctl restart sshd
 
-#config firewalld 
+#config firewalld
 firewall-cmd --permanent --remove-service=ssh
 firewall-cmd --permanent --add-port=${myport}/tcp
 firewall-cmd --reload
@@ -88,5 +88,3 @@ function cdls() {
 alias cd=cdls
 " >> .bash_profile
 source .bash_profile
-
-

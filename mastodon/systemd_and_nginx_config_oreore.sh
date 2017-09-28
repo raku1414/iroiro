@@ -1,13 +1,9 @@
 #!/bin/bash
-edit_user="mastodon"
-exec_user="mastodonx"
-user_home=$(sudo -iu $edit_user pwd)
-node_env=$(sudo -iu $edit_user eval 'nvm which 6 | sed -E s@/bin/node@/bin@g | cat')
-
-mastodon_domain="mstdn.meltytempo.tk"
-mastodon_public_dir="$user_home/mastodon/public"
-mastodon_crt="/etc/letsencrypt/live/mstdn.meltytempo.tk/fullchain.pem"
-mastodon_key="/etc/letsencrypt/live/mstdn.meltytempo.tk/privkey.pem"
+. mastodon_env.sh
+node_env=$(sudo -iu $user eval 'nvm which 6 | sed -E s@/bin/node@/bin@g | cat')
+mastodon_public_dir="$home_for_user/mastodon/public"
+mastodon_crt="/etc/letsencrypt/live/$mastodon_domain/fullchain.pem"
+mastodon_key="/etc/letsencrypt/live/$mastodon_domain/privkey.pem"
 #sudo mkdir -p /etc/nginx/ssl
 
 cat << EOF | sudo tee  /etc/systemd/system/mastodon-web.service
@@ -17,12 +13,12 @@ After=network.target
 
 [Service]
 Type=simple
-User=$exec_user
-WorkingDirectory=$user_home/mastodon
+User=$user_for_run
+WorkingDirectory=$home_for_user/mastodon
 Environment="RAILS_ENV=production"
 Environment="PORT=3000"
-Environment=PATH=$node_env:$user_home/.rbenv/shims:$user_home/.rbenv/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=$user_home/.rbenv/shims/bundle exec puma -C config/puma.rb
+Environment=PATH=$node_env:$home_for_user/.rbenv/shims:$home_for_user/.rbenv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=$home_for_user/.rbenv/shims/bundle exec puma -C config/puma.rb
 TimeoutSec=15
 Restart=always
 EOF
@@ -34,12 +30,12 @@ After=network.target
 
 [Service]
 Type=simple
-User=$exec_user
-WorkingDirectory=$user_home/mastodon
+User=$user_for_run
+WorkingDirectory=$home_for_user/mastodon
 Environment="RAILS_ENV=production"
 Environment="DB_POOL=5"
-Environment=PATH=$node_env:$user_home/.rbenv/shims:$user_home/.rbenv/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=$user_home/.rbenv/shims/bundle exec sidekiq -c 5 -q default -q mailers -q pull -q push
+Environment=PATH=$node_env:$home_for_user/.rbenv/shims:$home_for_user/.rbenv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=$home_for_user/.rbenv/shims/bundle exec sidekiq -c 5 -q default -q mailers -q pull -q push
 TimeoutSec=15
 Restart=always
 
@@ -54,11 +50,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=$exec_user
-WorkingDirectory=$user_home/mastodon
+User=$user_for_run
+WorkingDirectory=$home_for_user/mastodon
 Environment="NODE_ENV=production"
 Environment="PORT=4000"
-ExecStart=$user_home/.nvm/nvm-exec npm run start
+ExecStart=$home_for_user/.nvm/nvm-exec npm run start
 TimeoutSec=15
 Restart=always
 [Install]
@@ -102,6 +98,3 @@ expect \"An optional company\"
 send \"\n\"
 interact
 "
-
-
-
