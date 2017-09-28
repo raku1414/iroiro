@@ -8,5 +8,5 @@ elif [ "$ID" = "centos" ] || [ "$ID" = "fedora" ]; then
 	yum groupinstall "Development Tools"
 	yum install -y kernel-devel kernel-headers libffi-devel gdbm-devel gdbm libyaml-devel readline-devel ncurse-devel libxml2-devel libxslt-devel pkgconfig autoconf bison bison-devel protobuf protobuf-compiler protobuf-devel libidn-devel libicu-devel openssl-devel readline-devel zlib-devel gcc gcc-c++ bzip2 git ImageMagick ffmpeg redis postgresql-contrib postgresql-server postgresql postgresql-devel
 elif [ "$ID" = "arch" ]; then
-	sudo pacman -S libjpeg-turbo libpng libtiff libpqxx libxslt git gcc protobuf pkg-config autoconf bison openssl libyaml readline zlib ncurses libffi gdbm nginx redis postgresql libidn icu
+	sudo pacman -S ffmpeg imagemagick libjpeg-turbo libpng libtiff libpqxx libxslt git gcc protobuf pkg-config autoconf bison openssl libyaml readline zlib ncurses libffi gdbm nginx redis postgresql libidn icu
 fi
